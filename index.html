@@ -508,68 +508,82 @@
         const state = {
             student: { name: '', dob: '' },
             examType: '',
-            token: '', // Menyimpan token yang valid
+            token: '', 
             questions: [],
-            answers: {}, // Format: { qIdx: '1' } or { qIdx: ['1','3'] } or { qIdx: { '1': 'B', '2': 'S' } }
-            doubtful: {}, // { qIdx: true }
+            answers: {}, 
+            doubtful: {}, 
             currentIndex: 0,
             timerInterval: null,
-            duration: 60 * 60, // 60 minutes in seconds
+            duration: 60 * 60, 
             timeRemaining: 0,
             score: 0,
             correctCount: 0,
             isSubmitting: false
         };
 
-        // --- Mock Data (Dummy) ---
-        const dummyData = [
-            {
-                Tipe: 'Literasi', Jenis: 'PG',
-                Pemantik: '<b>Sampah Plastik di Lautan</b><br>Tahukah kamu bahwa jutaan ton plastik berakhir di lautan setiap tahun? Sampah plastik ini tidak dapat terurai secara alami dalam waktu singkat. Hewan laut seperti penyu sering mengira kantong plastik sebagai ubur-ubur, makanan kesukaan mereka. Jika tertelan, plastik dapat menyumbat saluran pencernaan penyu dan menyebabkan kematian.',
-                Gambar: '',
-                Pertanyaan: 'Mengapa penyu sering memakan sampah kantong plastik di laut?',
-                Opsi1: 'Karena plastik berbau seperti ikan segar.', Opsi2: 'Karena kantong plastik terlihat seperti ubur-ubur.', Opsi3: 'Karena penyu adalah hewan pemakan segala (omnivora).', Opsi4: 'Karena tidak ada makanan lain di lautan.',
-                Kunci: '2', Pembahasan: 'Berdasarkan teks, penyu mengira kantong plastik sebagai ubur-ubur yang merupakan makanan kesukaannya.'
-            },
-            {
-                Tipe: 'Literasi', Jenis: 'PGK',
-                Pemantik: '<b>Sampah Plastik di Lautan</b><br>Tahukah kamu bahwa jutaan ton plastik berakhir di lautan setiap tahun? Sampah plastik ini tidak dapat terurai secara alami dalam waktu singkat. Hewan laut seperti penyu sering mengira kantong plastik sebagai ubur-ubur, makanan kesukaan mereka. Jika tertelan, plastik dapat menyumbat saluran pencernaan penyu dan menyebabkan kematian.',
-                Gambar: '',
-                Pertanyaan: 'Manakah pernyataan yang BENAR berdasarkan teks di atas? (Jawaban bisa lebih dari satu)',
-                Opsi1: 'Plastik dapat terurai secara alami dengan cepat.', Opsi2: 'Jutaan ton plastik berakhir di lautan setiap tahun.', Opsi3: 'Penyu menyukai makan ubur-ubur.', Opsi4: 'Penyu dapat mencerna plastik dengan baik.',
-                Kunci: '2,3', Pembahasan: 'Pernyataan 2 benar ("jutaan ton plastik berakhir di lautan..."). Pernyataan 3 benar ("ubur-ubur, makanan kesukaan mereka").'
-            },
-            {
-                Tipe: 'Literasi', Jenis: 'BS',
-                Pemantik: '', Gambar: '',
-                Pertanyaan: 'Tentukan apakah pernyataan berikut Benar (B) atau Salah (S) mengenai bahaya sampah!',
-                Opsi1: 'Sampah plastik mudah terurai di tanah.', Opsi2: 'Membakar sampah plastik dapat menghasilkan gas beracun.', Opsi3: 'Mendaur ulang adalah salah satu cara mengurangi sampah.', Opsi4: '',
-                Kunci: 'S,B,B', Pembahasan: '1. Salah, plastik sulit terurai. 2. Benar, pembakaran plastik melepas toksin. 3. Benar, daur ulang (recycle) mengurangi volume sampah.'
-            },
-            {
-                Tipe: 'Numerasi', Jenis: 'PG',
-                Pemantik: 'Ibu Budi berbelanja ke pasar tradisional. Ia membeli 2 kg telur seharga Rp 28.000 per kg, dan 3 liter minyak goreng seharga Rp 15.000 per liter. Ibu Budi membawa uang selembar Rp 100.000.',
-                Gambar: '',
-                Pertanyaan: 'Berapakah sisa uang kembalian Ibu Budi?',
-                Opsi1: 'Rp 1.000', Opsi2: 'Rp 4.000', Opsi3: 'Rp 9.000', Opsi4: 'Rp 10.000',
-                Kunci: '1', Pembahasan: 'Total = (2 x 28.000) + (3 x 15.000) = 56.000 + 45.000 = 101.000. Eh tunggu! Soal ini menjebak, Ibu Budi bawa Rp 100.000, belanja Rp 101.000. Berarti uangnya KURANG Rp 1.000. Tapi mari asumsikan Opsi 1 adalah jawaban jika harga telur Rp 27.500. Jawaban Dummy.'
-            },
-            {
-                Tipe: 'Numerasi', Jenis: 'ST',
-                Pemantik: 'Perhatikan bangun datar Persegi Panjang yang memiliki panjang 10 cm dan lebar 5 cm.',
-                Gambar: '',
-                Pertanyaan: 'Tentukan apakah pernyataan berikut Setuju (S) atau Tidak Setuju (T)!',
-                Opsi1: 'Luas bangun tersebut adalah 50 cm².', Opsi2: 'Keliling bangun tersebut adalah 30 cm.', Opsi3: 'Jika panjang dipotong setengah, bentuknya menjadi persegi.', Opsi4: '',
-                Kunci: 'S,S,S', Pembahasan: '1. Luas = p x l = 10 x 5 = 50 (Setuju). 2. Keliling = 2(p+l) = 2(15) = 30 (Setuju). 3. Panjang 1/2 dari 10 = 5. p=5, l=5 -> Persegi (Setuju).'
+        // --- SISTEM AUTO-SAVE LOKAL (ANTI-REFRESH) ---
+        const LOCAL_STORAGE_KEY = 'TKA_EXAM_SESSION';
+
+        function saveStateToLocal() {
+            // Jangan simpan interval timer ke local storage
+            const stateToSave = {
+                student: state.student,
+                examType: state.examType,
+                token: state.token,
+                questions: state.questions,
+                answers: state.answers,
+                doubtful: state.doubtful,
+                currentIndex: state.currentIndex,
+                timeRemaining: state.timeRemaining
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+        }
+
+        function restoreStateFromLocal() {
+            const savedStr = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedStr) {
+                try {
+                    const savedState = JSON.parse(savedStr);
+                    // Cek apakah ada sesi aktif dan waktu masih tersisa
+                    if (savedState.timeRemaining > 0 && savedState.questions && savedState.questions.length > 0) {
+                        
+                        Object.assign(state, savedState); // Pulihkan state
+                        
+                        // Perbarui UI
+                        document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType}`;
+                        document.getElementById('header-timer').classList.remove('hidden');
+                        
+                        // Render ulang soal dan grid
+                        renderGrid();
+                        renderQuestion();
+                        startTimer();
+                        switchScreen('exam');
+                        
+                        showAlert("Sesi Dipulihkan", "Anda dikembalikan ke ujian terakhir. Jawaban dan waktu Anda aman.", "fas fa-sync text-green-500", "bg-green-100");
+                        return true; // Berhasil dipulihkan
+                    }
+                } catch(e) {
+                    console.error("Gagal memulihkan sesi", e);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                }
             }
-        ];
+            return false; // Tidak ada sesi aktif
+        }
+
+        function clearLocalState() {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
 
         // --- Init DOM Elements ---
         window.onload = () => {
-            populateDateDropdowns();
-            generateNewToken();
+            // Cek apakah ada sesi ujian yang terputus sebelum load halaman awal
+            const hasRestored = restoreStateFromLocal();
             
-            // Connect to Firebase silently
+            if (!hasRestored) {
+                populateDateDropdowns();
+                generateNewToken();
+            }
+            
             if(window.authenticateFirebase) {
                 window.authenticateFirebase().then(user => {
                     if(user) console.log("Firebase Auth Success", user.uid);
@@ -720,6 +734,9 @@
             state.currentIndex = 0;
             state.timeRemaining = state.duration;
             state.isSubmitting = false;
+
+            // Simpan sesi pertama kali
+            saveStateToLocal();
 
             document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType}`;
             document.getElementById('header-timer').classList.remove('hidden');
@@ -985,12 +1002,12 @@
             }
             else if (type === 'BS') {
                 let current = state.answers[qIdx] || {};
-                current[optIndex] = val; // { '1': 'B', '2': 'S' }
+                current[optIndex] = val; 
                 state.answers[qIdx] = current;
             }
 
-            // If answered, auto-remove doubt flag? (Optional, let's keep it manual)
             updateGridUI();
+            saveStateToLocal(); // Simpan setiap ada jawaban masuk
         }
 
         function toggleRagu() {
@@ -1001,6 +1018,7 @@
                 delete state.doubtful[state.currentIndex];
             }
             updateGridUI();
+            saveStateToLocal(); // Simpan state ragu-ragu
         }
 
         function navigateQuestion(step) {
@@ -1008,14 +1026,16 @@
             if (nextIdx >= 0 && nextIdx < state.questions.length) {
                 state.currentIndex = nextIdx;
                 renderQuestion();
+                saveStateToLocal(); // Simpan posisi soal terakhir
             }
         }
 
         function jumpToQuestion(idx) {
             state.currentIndex = idx;
             renderQuestion();
+            saveStateToLocal(); // Simpan posisi soal terakhir
             if(window.innerWidth < 768) {
-                toggleGridPanel(); // Close on mobile
+                toggleGridPanel(); 
             }
         }
 
@@ -1027,6 +1047,11 @@
             
             state.timerInterval = setInterval(() => {
                 state.timeRemaining--;
+                
+                // Simpan sisa waktu setiap 5 detik agar memori browser tidak terlalu terbebani
+                if (state.timeRemaining % 5 === 0) {
+                    saveStateToLocal();
+                }
                 
                 if (state.timeRemaining <= 0) {
                     clearInterval(state.timerInterval);
@@ -1164,6 +1189,9 @@
             state.correctCount = correct;
             state.score = Math.round((correct / total) * 100);
 
+            // Bersihkan Sesi Lokal karena ujian sudah selesai secara resmi
+            clearLocalState();
+
             // Update Result UI
             document.getElementById('result-student-info').innerText = `${state.student.name} | ${state.examType}`;
             document.getElementById('res-score').innerText = state.score;
@@ -1276,6 +1304,9 @@
         }
 
         function resetApp() {
+            // Bersihkan sesi untuk berjaga-jaga
+            clearLocalState();
+            
             // Reset header
             document.getElementById('header-timer').classList.replace('bg-red-600', 'bg-blue-800');
             document.getElementById('header-timer').classList.replace('border-red-700', 'border-blue-600');
