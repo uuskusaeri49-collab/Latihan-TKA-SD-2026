@@ -103,7 +103,7 @@
                     <p class="text-xs text-blue-200" id="header-student-name">Peserta Ujian</p>
                 </div>
             </div>
-            <div id="header-timer" class="hidden bg-blue-800 px-4 py-2 rounded-lg text-lg font-mono font-bold flex items-center gap-2 border border-blue-600 shadow-sm">
+            <div id="header-timer" class="hidden bg-blue-800 px-4 py-2 rounded-lg text-lg font-mono font-bold flex items-center gap-2 border border-blue-600 shadow-sm transition-colors duration-300">
                 <i class="far fa-clock text-blue-300"></i> <span id="time-display">60:00</span>
             </div>
         </div>
@@ -129,21 +129,31 @@
                     
                     <div class="bg-blue-700/50 p-4 rounded-xl text-sm border border-blue-500">
                         <p class="font-semibold mb-1"><i class="fas fa-info-circle mr-1"></i> Informasi Ujian</p>
-                        <ul class="list-disc pl-5 text-blue-100 space-y-1">
-                            <li>Waktu pengerjaan: 60 Menit</li>
+                        <ul class="list-disc pl-5 text-blue-100 space-y-1 mb-3">
+                            <li>Sesi Utama: 60 Menit</li>
+                            <li>Sesi Survei: 15 Menit</li>
                             <li>Terdapat soal PG, PG Kompleks, dan Benar/Salah</li>
-                            <li>Pembahasan akan muncul di akhir sesi</li>
                         </ul>
-                        <div class="mt-4 pt-3 border-t border-blue-500/50">
-                            <p class="text-xs text-blue-200 mb-1">Token Ujian Anda:</p>
-                            <p id="display-token" class="text-2xl font-mono font-bold tracking-widest text-yellow-300">------</p>
+                        <div class="mt-4 pt-3 border-t border-blue-500/50 flex justify-between items-end">
+                            <div>
+                                <p class="text-xs text-blue-200 mb-1">Token Ujian Anda:</p>
+                                <p id="display-token" class="text-2xl font-mono font-bold tracking-widest text-yellow-300">------</p>
+                            </div>
+                            <button onclick="generateNewToken()" class="text-blue-200 hover:text-white text-xs p-2 rounded hover:bg-blue-600 transition" title="Refresh Token">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Form Panel (Right) -->
                 <div class="p-8 md:w-3/5">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">Data Peserta</h3>
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h3 class="text-2xl font-bold text-gray-800">Data Peserta</h3>
+                        <button onclick="clearCacheAndRefresh()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg border flex items-center gap-1 transition">
+                            <i class="fas fa-sync-alt"></i> Perbarui Soal
+                        </button>
+                    </div>
                     
                     <div class="space-y-5">
                         <div>
@@ -206,7 +216,7 @@
                 <div class="absolute inset-0 rounded-full border-4 border-gray-200"></div>
                 <div class="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
                 <div class="absolute inset-0 flex items-center justify-center text-blue-600">
-                    <i class="fas fa-cloud-download-alt text-2xl"></i>
+                    <i class="fas fa-cloud-download-alt text-2xl" id="loading-icon"></i>
                 </div>
             </div>
             <h2 class="text-2xl font-bold text-gray-800" id="loading-title">Menyiapkan Ujian...</h2>
@@ -331,7 +341,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-                    <button onclick="showReviewScreen()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
+                    <button onclick="switchScreen('review')" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
                         <i class="fas fa-list-check"></i> Lihat Pembahasan
                     </button>
                     <button onclick="resetApp()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition flex items-center justify-center gap-2">
@@ -339,7 +349,7 @@
                     </button>
                 </div>
                 
-                <p class="text-xs text-gray-400 mt-6"><i class="fas fa-check"></i> Hasil ujian Anda telah tersimpan ke sistem.</p>
+                <p class="text-xs text-gray-400 mt-6" id="save-status-indicator"><i class="fas fa-spinner fa-spin mr-1"></i> Sedang menyimpan hasil ke server...</p>
             </div>
         </section>
 
@@ -348,7 +358,7 @@
             <div class="bg-white border-b shadow-sm px-6 py-4 flex justify-between items-center flex-shrink-0 z-10">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-book-open text-blue-600 mr-2"></i> Pembahasan Soal</h2>
-                    <p class="text-sm text-gray-500">Pelajari kembali jawaban Anda</p>
+                    <p class="text-sm text-gray-500">Pelajari kembali jawaban Anda (Sesi Utama)</p>
                 </div>
                 <button onclick="resetApp()" class="px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition text-sm">
                     Selesai & Keluar
@@ -368,10 +378,10 @@
     <div id="modal-finish" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform scale-95 transition-transform duration-300" id="modal-finish-content">
             <div class="text-center">
-                <div class="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                <div class="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4" id="conf-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Konfirmasi Selesai</h3>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2" id="conf-title">Konfirmasi Selesai</h3>
                 
                 <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200 text-left">
                     <div class="flex justify-between mb-2">
@@ -388,16 +398,16 @@
                     </div>
                 </div>
                 
-                <p class="text-gray-600 mb-6 text-sm">Setelah mengakhiri ujian, Anda tidak dapat mengubah jawaban lagi. Apakah Anda yakin ingin menyelesaikan ujian sekarang?</p>
+                <p class="text-gray-600 mb-6 text-sm" id="conf-desc">Setelah mengakhiri sesi ini, Anda tidak dapat mengubah jawaban lagi.</p>
             </div>
             <div class="flex gap-3">
                 <button onclick="closeFinishModal()" class="flex-1 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-bold transition">Batal</button>
-                <button onclick="submitExam()" class="flex-1 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold transition shadow-md">Ya, Selesai</button>
+                <button onclick="processSubmit()" class="flex-1 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold transition shadow-md">Ya, Selesai</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Pesan Custom (Alert Replacement) -->
+    <!-- Modal Pesan Custom -->
     <div id="modal-alert" class="fixed inset-0 modal-bg hidden z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 text-center">
             <div id="alert-icon" class="w-12 h-12 rounded-full flex items-center justify-center text-2xl mx-auto mb-3"></div>
@@ -407,100 +417,10 @@
         </div>
     </div>
 
-    <!-- Modal Bantuan Sheet -->
-    <div id="modal-info-sheet" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="font-bold text-lg"><i class="fas fa-table text-green-600 mr-2"></i> Format Google Sheets</h3>
-                <button onclick="closeInfoModal('sheet')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto text-sm text-gray-700 prose prose-sm">
-                <p>Buat Google Sheet baru, ubah akses bagikan menjadi <b>"Siapa saja yang memiliki link" (Pelihat)</b>. Buat kolom di baris pertama persis seperti ini:</p>
-                <div class="bg-gray-100 p-3 rounded border font-mono text-xs overflow-x-auto mb-4 whitespace-nowrap">
-                    Tipe | Pemantik | Gambar | Jenis | Pertanyaan | Opsi 1 | Opsi 2 | Opsi 3 | Opsi 4 | Kunci | Pembahasan
-                </div>
-                <ul class="list-disc pl-5 space-y-2">
-                    <li><b>Tipe:</b> Numerasi / Literasi</li>
-                    <li><b>Jenis:</b> <b>PG</b> (Ganda), <b>PGK</b> (Ganda Kompleks), <b>BS</b> (Benar/Salah), <b>ST</b> (Setuju/Tidak), <b>SS</b> (Sesuai/Tidak), <b>TP</b> (Tepat/Tidak)</li>
-                    <li><b>Kunci Jawaban:</b>
-                        <ul class="list-circle pl-4 mt-1 text-gray-500">
-                            <li>Untuk PG: Tulis angka opsi yang benar (misal: <code>1</code> atau <code>2</code>)</li>
-                            <li>Untuk PGK: Tulis angka dipisah koma (misal: <code>1,3,4</code>)</li>
-                            <li>Untuk BS/ST/SS/TP: Tulis singkatan sesuai jumlah opsi (misal: <code>B,S,B,S</code> atau <code>S,T,S,T</code>)</li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- FIREBASE APP & SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global Setup Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'latihan-tka-cbt-123';
-        const fbConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        
-        // Mock Config if not inside immersive environment
-        const defaultFBConfig = {
-            apiKey: "mock-key", authDomain: "mock.firebaseapp.com", projectId: "mock-project", storageBucket: "mock.appspot.com"
-        };
-        const firebaseConfig = fbConfigStr ? JSON.parse(fbConfigStr) : defaultFBConfig;
-
-        let app, db, auth;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } catch(e) {
-            console.log("Firebase init skipped (offline mode)");
-        }
-
-        window.db = db;
-        window.auth = auth;
-        window.appId = appId;
-
-        window.authenticateFirebase = async () => {
-            if(!auth) return null;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                return auth.currentUser;
-            } catch (error) {
-                console.error("Auth Error:", error);
-                return null;
-            }
-        };
-
-        window.saveResultToCloud = async (resultData) => {
-            if(!db || !auth.currentUser) return;
-            try {
-                // Rule 1: Saving to public data collection so teachers could theoretically pull it later
-                const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'hasil_ujian');
-                await addDoc(collRef, {
-                    ...resultData,
-                    userId: auth.currentUser.uid,
-                    timestamp: serverTimestamp()
-                });
-            } catch (e) {
-                console.error("Error saving to cloud: ", e);
-            }
-        };
-    </script>
-
     <!-- JAVASCRIPT APP LOGIC -->
     <script>
         // =========================================================================
         // PENGATURAN DATABASE SOAL (GOOGLE APPS SCRIPT)
-        // Masukkan Link Web App Google Script Anda di bawah ini
-        // Contoh: const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyy123.../exec";
-        // Kosongkan "" jika ingin mencoba Dummy Data simulasi.
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTLFZc3rd92wumhiIi4riIl_6irA2h2Ajt-fMEqRIdVvdYDztEqiQazC8p119FQGKE/exec"; 
         // =========================================================================
 
@@ -509,12 +429,19 @@
             student: { name: '', dob: '' },
             examType: '',
             token: '', 
+            currentPhase: 'main', // 'main' (Utama) atau 'survey' (Survei)
+            
+            // Penyimpanan terpisah untuk dua sesi
+            main: { questions: [], answers: {}, doubtful: {} },
+            survey: { questions: [], answers: {}, doubtful: {} },
+            
+            // Pointer aktif (akan menunjuk ke 'main' atau 'survey' tergantung fase)
             questions: [],
             answers: {}, 
             doubtful: {}, 
+            
             currentIndex: 0,
             timerInterval: null,
-            duration: 60 * 60, 
             timeRemaining: 0,
             score: 0,
             correctCount: 0,
@@ -523,16 +450,16 @@
 
         // --- SISTEM AUTO-SAVE LOKAL (ANTI-REFRESH) ---
         const LOCAL_STORAGE_KEY = 'TKA_EXAM_SESSION';
+        const CACHE_KEY_PREFIX = 'TKA_CACHE_';
 
         function saveStateToLocal() {
-            // Jangan simpan interval timer ke local storage
             const stateToSave = {
                 student: state.student,
                 examType: state.examType,
                 token: state.token,
-                questions: state.questions,
-                answers: state.answers,
-                doubtful: state.doubtful,
+                currentPhase: state.currentPhase,
+                main: state.main,
+                survey: state.survey,
                 currentIndex: state.currentIndex,
                 timeRemaining: state.timeRemaining
             };
@@ -545,12 +472,24 @@
                 try {
                     const savedState = JSON.parse(savedStr);
                     // Cek apakah ada sesi aktif dan waktu masih tersisa
-                    if (savedState.timeRemaining > 0 && savedState.questions && savedState.questions.length > 0) {
+                    if (savedState.timeRemaining > 0 && savedState.main && savedState.main.questions.length > 0) {
                         
-                        Object.assign(state, savedState); // Pulihkan state
+                        Object.assign(state, savedState); 
+                        
+                        // Pulihkan referensi pointer sesuai fase yang sedang berjalan
+                        if (state.currentPhase === 'main') {
+                            state.questions = state.main.questions;
+                            state.answers = state.main.answers;
+                            state.doubtful = state.main.doubtful;
+                        } else {
+                            state.questions = state.survey.questions;
+                            state.answers = state.survey.answers;
+                            state.doubtful = state.survey.doubtful;
+                        }
                         
                         // Perbarui UI
-                        document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType}`;
+                        const phaseText = state.currentPhase === 'survey' ? ' (Survei)' : '';
+                        document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType}${phaseText}`;
                         document.getElementById('header-timer').classList.remove('hidden');
                         
                         // Render ulang soal dan grid
@@ -560,14 +499,14 @@
                         switchScreen('exam');
                         
                         showAlert("Sesi Dipulihkan", "Anda dikembalikan ke ujian terakhir. Jawaban dan waktu Anda aman.", "fas fa-sync text-green-500", "bg-green-100");
-                        return true; // Berhasil dipulihkan
+                        return true; 
                     }
                 } catch(e) {
                     console.error("Gagal memulihkan sesi", e);
                     localStorage.removeItem(LOCAL_STORAGE_KEY);
                 }
             }
-            return false; // Tidak ada sesi aktif
+            return false; 
         }
 
         function clearLocalState() {
@@ -576,29 +515,25 @@
 
         // --- Init DOM Elements ---
         window.onload = () => {
-            // Cek apakah ada sesi ujian yang terputus sebelum load halaman awal
             const hasRestored = restoreStateFromLocal();
             
             if (!hasRestored) {
                 populateDateDropdowns();
                 generateNewToken();
             }
-            
-            if(window.authenticateFirebase) {
-                window.authenticateFirebase().then(user => {
-                    if(user) console.log("Firebase Auth Success", user.uid);
-                });
-            }
         };
 
         function populateDateDropdowns() {
             const daySel = document.getElementById('login-day');
+            if(!daySel) return;
+            daySel.innerHTML = '<option value="">Tanggal</option>';
             for(let i=1; i<=31; i++) {
                 daySel.innerHTML += `<option value="${i}">${i}</option>`;
             }
             const yearSel = document.getElementById('login-year');
             const currYear = new Date().getFullYear();
-            for(let i=currYear-15; i<=currYear-9; i++) { // Range SD kelas 6 (approx 10-12 yo)
+            yearSel.innerHTML = '<option value="">Tahun</option>';
+            for(let i=currYear-15; i<=currYear-9; i++) { 
                 yearSel.innerHTML += `<option value="${i}">${i}</option>`;
             }
         }
@@ -630,52 +565,65 @@
             if(displayEl) displayEl.innerText = token;
         }
 
-        // --- Modals ---
-        function showInfoModal(type) {
-            if(type === 'sheet') document.getElementById('modal-info-sheet').classList.remove('hidden');
-        }
-        function closeInfoModal(type) {
-            if(type === 'sheet') document.getElementById('modal-info-sheet').classList.add('hidden');
-        }
-        
-        // --- Fetch Google Sheets ---
+        // --- Fetch Questions with Cache ---
         async function fetchQuestions(type) {
-            if (!GOOGLE_APP_SCRIPT_URL || GOOGLE_APP_SCRIPT_URL.trim() === '') {
-                console.log("Menggunakan Dummy Data karena GOOGLE_APP_SCRIPT_URL kosong");
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        const filtered = dummyData.filter(q => q.Tipe.toLowerCase() === type.toLowerCase());
-                        resolve(filtered);
-                    }, 1000);
-                });
+            const cacheKey = CACHE_KEY_PREFIX + type;
+            const cachedData = localStorage.getItem(cacheKey);
+            
+            if (cachedData) {
+                try {
+                    return JSON.parse(cachedData);
+                } catch(e) { /* ignore invalid cache */ }
             }
 
             try {
-                // Fetch mengambil dari Google Apps Script Web App URL
-                const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?tipe=${type}`);
-                if (!response.ok) throw new Error("Gagal terhubung ke server");
+                // Menambahkan encodeURIComponent untuk mengamankan spasi (misal pada "Survei Karakter")
+                const url = `${GOOGLE_APP_SCRIPT_URL}?tipe=${encodeURIComponent(type)}`;
+                
+                // Menambahkan redirect: 'follow' agar tidak diblokir oleh sistem Google Apps Script
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                if (!response.ok) throw new Error(`Gagal terhubung ke server (HTTP: ${response.status})`);
                 
                 const data = await response.json();
                 
-                // Pastikan format terisi dan filter soal bermasalah
                 const filtered = data.filter(item => 
                     item.Pertanyaan && item.Pertanyaan.toString().trim().length > 0 && 
                     item.Jenis && item.Jenis.toString().trim().length > 0
                 );
+                
+                if(filtered.length > 0) {
+                    localStorage.setItem(cacheKey, JSON.stringify(filtered));
+                }
+                
                 return filtered;
-
             } catch (error) {
                 console.error("Fetch Error:", error);
                 return null;
             }
         }
 
+        function clearCacheAndRefresh() {
+            Object.keys(localStorage).forEach(key => {
+                if(key.startsWith(CACHE_KEY_PREFIX)) {
+                    localStorage.removeItem(key);
+                }
+            });
+            showAlert("Berhasil", "Data soal di perangkat ini telah diperbarui dari server.", "fas fa-check text-green-500", "bg-green-100");
+        }
+
         // --- App Flow ---
         function switchScreen(screenId) {
-            ['screen-login', 'screen-loading', 'screen-exam', 'screen-result', 'screen-review'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
+            const screens = ['screen-login', 'screen-loading', 'screen-exam', 'screen-result', 'screen-review'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
             });
-            document.getElementById(`screen-${screenId}`).classList.remove('hidden');
+            const target = document.getElementById(`screen-${screenId}`);
+            if(target) target.classList.remove('hidden');
         }
 
         async function startLogin(type) {
@@ -698,41 +646,58 @@
             state.student = { name, dob: `${d}-${m}-${y}` };
             state.examType = type;
             
+            // Animasi Loading
             document.getElementById('loading-title').innerText = `Menyiapkan ${type}`;
             document.getElementById('loading-desc').innerText = "Mengambil data soal, harap tunggu sebentar.";
+            const loadIcon = document.getElementById('loading-icon');
+            loadIcon.className = 'fas fa-cloud-download-alt text-2xl';
             switchScreen('loading');
 
-            // Timeout peringatan Google Server lambat (Muncul setelah 5 detik)
+            // Timeout peringatan Google Server lambat
             let slowWarningTimer = setTimeout(() => {
                 const descEl = document.getElementById('loading-desc');
                 if(descEl) {
-                    descEl.innerHTML = "Meminta akses ke server Google...<br><span class='text-blue-500 text-sm'>Ini mungkin memakan waktu 10-15 detik untuk percobaan pertama.</span>";
+                    descEl.innerHTML = "Meminta akses ke server Google...<br><span class='text-blue-500 text-sm font-semibold'>Ini wajar, butuh waktu 10-15 detik untuk mengaktifkan server pada percobaan pertama.</span>";
+                    loadIcon.className = 'fas fa-hourglass-half text-2xl animate-pulse';
                 }
             }, 5000);
 
-            const data = await fetchQuestions(type);
+            // Tentukan jenis survei berdasarkan tipe ujian
+            const surveyType = (type === 'Numerasi') ? 'Survei Karakter' : 'Survei Lingkungan Belajar';
+
+            // Ambil Data Soal Utama dan Survei secara bersamaan (Parallel)
+            const [dataUtama, dataSurvei] = await Promise.all([
+                fetchQuestions(type),
+                fetchQuestions(surveyType)
+            ]);
             
             // Hapus peringatan jika sudah selesai loading
             clearTimeout(slowWarningTimer);
             
-            if (data === null) {
-                showAlert("Gagal Mengambil Data", "Pastikan Link Web App Apps Script sudah benar.", "fas fa-times-circle text-red-500", "bg-red-100");
+            if (dataUtama === null) {
+                showAlert("Gagal Mengambil Data", "Pastikan Link Web App Apps Script sudah benar dan hak aksesnya 'Semua Orang'.", "fas fa-times-circle text-red-500", "bg-red-100");
                 switchScreen('login');
                 return;
             }
 
-            if (data.length === 0) {
+            if (dataUtama.length === 0) {
                 showAlert("Kosong", `Tidak ada soal ${type} yang ditemukan.`, "fas fa-folder-open text-gray-500", "bg-gray-100");
                 switchScreen('login');
                 return;
             }
 
-            // Init Exam State
-            state.questions = data;
-            state.answers = {};
-            state.doubtful = {};
+            // Init Exam State (Mulai dari Sesi Utama)
+            state.currentPhase = 'main';
+            state.main = { questions: dataUtama, answers: {}, doubtful: {} };
+            state.survey = { questions: dataSurvei || [], answers: {}, doubtful: {} };
+            
+            // Set Pointer ke Sesi Utama
+            state.questions = state.main.questions;
+            state.answers = state.main.answers;
+            state.doubtful = state.main.doubtful;
+            
             state.currentIndex = 0;
-            state.timeRemaining = state.duration;
+            state.timeRemaining = 60 * 60; // 60 Menit
             state.isSubmitting = false;
 
             // Simpan sesi pertama kali
@@ -740,6 +705,7 @@
 
             document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType}`;
             document.getElementById('header-timer').classList.remove('hidden');
+            document.getElementById('header-timer').className = "bg-blue-800 px-4 py-2 rounded-lg text-lg font-mono font-bold flex items-center gap-2 border border-blue-600 shadow-sm transition-colors duration-300";
 
             renderGrid();
             renderQuestion();
@@ -774,10 +740,8 @@
                 const btn = document.getElementById(`grid-btn-${i}`);
                 if(!btn) return;
                 
-                // Reset classes except basic layout
                 btn.className = 'nav-btn w-full aspect-square border border-gray-300 rounded bg-white text-sm font-semibold flex items-center justify-center';
                 
-                // Check Answered State
                 const ans = state.answers[i];
                 let isAnswered = false;
                 
@@ -821,7 +785,6 @@
             document.getElementById('exam-q-number').innerText = `SOAL NO. ${state.currentIndex + 1}`;
             document.getElementById('exam-q-type').innerText = getQuestionTypeLabel(q.Jenis);
             
-            // --- Left Panel: Passage & Image ---
             const passagePanel = document.getElementById('passage-panel');
             const qPanel = document.getElementById('question-panel');
             const passageCont = document.getElementById('passage-container');
@@ -829,6 +792,7 @@
             
             let hasLeftContent = false;
             
+            // Render Text dengan pengenalan HTML tags bawaan dari Sheet
             if (q.Pemantik && String(q.Pemantik).trim() !== '') {
                 document.getElementById('passage-text').innerHTML = String(q.Pemantik).replace(/\n/g, '<br>');
                 passageCont.classList.remove('hidden');
@@ -837,7 +801,6 @@
                 passageCont.classList.add('hidden');
             }
 
-            // Fix: Check if image is a valid URL, ignore placeholder text like "Kosongkan..."
             const imgUrl = q.Gambar ? String(q.Gambar).trim() : '';
             const isValidImage = imgUrl.startsWith('http://') || imgUrl.startsWith('https://') || imgUrl.startsWith('data:image/');
 
@@ -846,7 +809,7 @@
                 imgCont.classList.remove('hidden');
                 hasLeftContent = true;
             } else {
-                document.getElementById('question-image').src = ''; // Clear just in case
+                document.getElementById('question-image').src = ''; 
                 imgCont.classList.add('hidden');
             }
 
@@ -858,13 +821,11 @@
                 qPanel.classList.replace('w-[55%]', 'w-full');
             }
 
-            // --- Right Panel: Question & Options ---
             document.getElementById('question-text').innerHTML = String(q.Pertanyaan).replace(/\n/g, '<br>');
             
             const optCont = document.getElementById('options-container');
             optCont.innerHTML = '';
             
-            // Fix: Support both "Opsi 1" (with space from sheet) and "Opsi1" (from dummy/code)
             const opt1 = q['Opsi 1'] || q.Opsi1 || '';
             const opt2 = q['Opsi 2'] || q.Opsi2 || '';
             const opt3 = q['Opsi 3'] || q.Opsi3 || '';
@@ -913,7 +874,6 @@
                 });
                 optCont.innerHTML = html;
                 
-                // add listener to toggle check icons manually for styling
                 setTimeout(() => {
                     document.querySelectorAll('.cbt-checkbox').forEach(cb => {
                         cb.addEventListener('change', (e) => {
@@ -927,7 +887,6 @@
             else if (['BS', 'ST', 'SS', 'TP'].includes(q.Jenis)) {
                 const curAnsObj = state.answers[state.currentIndex] || {};
                 const bsLabels = getBSOptions(q.Jenis);
-                // First Char as Key (e.g., 'B' and 'S')
                 const code1 = bsLabels[0].charAt(0).toUpperCase(); 
                 const code2 = bsLabels[1].charAt(0).toUpperCase();
 
@@ -944,7 +903,7 @@
                         <tbody>`;
                 
                 opts.forEach((o, idx) => {
-                    const ans = curAnsObj[idx+1] || ''; // Option index is 1-based (Opsi1 = idx+1)
+                    const ans = curAnsObj[idx+1] || ''; 
                     html += `
                         <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                             <td class="py-4 px-4 text-sm text-gray-800">${o.text}</td>
@@ -978,7 +937,6 @@
             
             updateGridUI();
             
-            // Scroll to top
             qPanel.scrollTop = 0;
             if(hasLeftContent) passagePanel.scrollTop = 0;
         }
@@ -994,9 +952,9 @@
             else if (type === 'PGK') {
                 let current = state.answers[qIdx] || [];
                 if (current.includes(val)) {
-                    current = current.filter(v => v !== val); // remove
+                    current = current.filter(v => v !== val); 
                 } else {
-                    current.push(val); // add
+                    current.push(val); 
                 }
                 state.answers[qIdx] = current;
             }
@@ -1007,7 +965,7 @@
             }
 
             updateGridUI();
-            saveStateToLocal(); // Simpan setiap ada jawaban masuk
+            saveStateToLocal();
         }
 
         function toggleRagu() {
@@ -1018,7 +976,7 @@
                 delete state.doubtful[state.currentIndex];
             }
             updateGridUI();
-            saveStateToLocal(); // Simpan state ragu-ragu
+            saveStateToLocal(); 
         }
 
         function navigateQuestion(step) {
@@ -1026,17 +984,15 @@
             if (nextIdx >= 0 && nextIdx < state.questions.length) {
                 state.currentIndex = nextIdx;
                 renderQuestion();
-                saveStateToLocal(); // Simpan posisi soal terakhir
+                saveStateToLocal(); 
             }
         }
 
         function jumpToQuestion(idx) {
             state.currentIndex = idx;
             renderQuestion();
-            saveStateToLocal(); // Simpan posisi soal terakhir
-            if(window.innerWidth < 768) {
-                toggleGridPanel(); 
-            }
+            saveStateToLocal(); 
+            if(window.innerWidth < 768) toggleGridPanel(); 
         }
 
         function startTimer() {
@@ -1048,15 +1004,20 @@
             state.timerInterval = setInterval(() => {
                 state.timeRemaining--;
                 
-                // Simpan sisa waktu setiap 5 detik agar memori browser tidak terlalu terbebani
                 if (state.timeRemaining % 5 === 0) {
                     saveStateToLocal();
                 }
                 
+                // Ketika waktu habis (Auto-Submit Logic)
                 if (state.timeRemaining <= 0) {
                     clearInterval(state.timerInterval);
-                    showAlert("Waktu Habis", "Waktu pengerjaan telah selesai. Jawaban akan disubmit otomatis.", "fas fa-clock text-red-500", "bg-red-100");
-                    setTimeout(() => submitExam(true), 2500); // Auto submit
+                    if (state.currentPhase === 'main') {
+                        showAlert("Waktu Habis", "Waktu pengerjaan Sesi Utama telah selesai. Melanjutkan ke Sesi Survei otomatis.", "fas fa-clock text-orange-500", "bg-orange-100");
+                        setTimeout(() => transitionToSurvey(), 3000); 
+                    } else {
+                        showAlert("Waktu Habis", "Waktu Survei telah habis. Jawaban akan disimpan otomatis.", "fas fa-clock text-red-500", "bg-red-100");
+                        setTimeout(() => submitFinalExam(true), 3000); 
+                    }
                     return;
                 }
                 
@@ -1070,7 +1031,7 @@
                 
                 display.innerText = timeStr;
                 
-                if (state.timeRemaining < 300) { // 5 minutes warning
+                if (state.timeRemaining < 300) { 
                     timerContainer.classList.remove('bg-blue-800', 'border-blue-600');
                     timerContainer.classList.add('bg-red-600', 'border-red-700', 'animate-pulse');
                 }
@@ -1081,7 +1042,6 @@
             let answeredCount = 0;
             const total = state.questions.length;
             
-            // Calculate actual answered based on types
             state.questions.forEach((q, i) => {
                 const ans = state.answers[i];
                 let isFull = false;
@@ -1090,13 +1050,11 @@
                     if(q.Jenis === 'PG') isFull = true;
                     else if(q.Jenis === 'PGK') isFull = ans.length > 0;
                     else if(['BS','ST','SS','TP'].includes(q.Jenis)) {
-                        // Count how many options exist (Fixed keys)
                         let optCount = 0;
                         if(q['Opsi 1'] || q.Opsi1) optCount++; 
                         if(q['Opsi 2'] || q.Opsi2) optCount++;
                         if(q['Opsi 3'] || q.Opsi3) optCount++; 
                         if(q['Opsi 4'] || q.Opsi4) optCount++;
-                        
                         isFull = Object.keys(ans).length === optCount;
                     }
                 }
@@ -1106,6 +1064,15 @@
             document.getElementById('conf-total').innerText = total;
             document.getElementById('conf-answered').innerText = answeredCount;
             document.getElementById('conf-unanswered').innerText = total - answeredCount;
+            
+            // Ubah teks modal berdasarkan fase
+            if (state.currentPhase === 'main') {
+                document.getElementById('conf-title').innerText = "Peringatan Beralih Sesi";
+                document.getElementById('conf-desc').innerText = "Anda akan mengakhiri Sesi Utama dan beralih ke Pengisian Survei. Pastikan semua soal telah dijawab karena Anda TIDAK BISA KEMBALI ke sesi ini.";
+            } else {
+                document.getElementById('conf-title').innerText = "Akhiri Keseluruhan Ujian";
+                document.getElementById('conf-desc').innerText = "Anda akan mengakhiri pengisian survei dan seluruh rangkaian ujian. Yakin untuk melihat hasil sekarang?";
+            }
             
             const modal = document.getElementById('modal-finish');
             modal.classList.remove('hidden');
@@ -1124,37 +1091,74 @@
             }, 300);
         }
 
-        async function submitExam(auto = false) {
+        function processSubmit(auto = false) {
             if(!auto) closeFinishModal();
             if(state.isSubmitting) return;
+
+            if (state.currentPhase === 'main') {
+                transitionToSurvey();
+            } else {
+                submitFinalExam(auto);
+            }
+        }
+
+        function transitionToSurvey() {
+            clearInterval(state.timerInterval);
+            
+            // Jika tidak ada data survei di sheet, langsung akhiri ujian
+            if (!state.survey || state.survey.questions.length === 0) {
+                submitFinalExam(true);
+                return;
+            }
+
+            // Ganti state ke fase survei
+            state.currentPhase = 'survey';
+            state.questions = state.survey.questions;
+            state.answers = state.survey.answers;
+            state.doubtful = state.survey.doubtful;
+            
+            state.currentIndex = 0;
+            state.timeRemaining = 15 * 60; // 15 Menit untuk survei
+
+            // Perbarui UI
+            document.getElementById('header-student-name').innerText = `${state.student.name} | ${state.examType} (Survei)`;
+            const timerContainer = document.getElementById('header-timer');
+            timerContainer.classList.remove('bg-red-600', 'border-red-700', 'animate-pulse');
+            timerContainer.classList.add('bg-blue-800', 'border-blue-600');
+            
+            renderGrid();
+            renderQuestion();
+            startTimer();
+            saveStateToLocal();
+
+            if (state.timeRemaining > 0) { // Hanya munculkan pop up jika transisi tidak auto karena waktu habis
+                showAlert("Masuk Sesi Survei", "Sesi Utama telah ditutup. Sekarang silakan isi Survei dengan jujur. Waktu Anda 15 Menit. (Catatan: Survei ini TIDAK masuk dalam perhitungan nilai ujian Anda).", "fas fa-clipboard-list text-blue-500", "bg-blue-100");
+            }
+        }
+
+        function submitFinalExam(auto = false) {
             state.isSubmitting = true;
             clearInterval(state.timerInterval);
             
+            // Ubah UI langsung ke Result agar instan (Background Saving)
             document.getElementById('header-timer').classList.add('hidden');
+            switchScreen('result');
             
-            // Ubah teks tombol menjadi loading
-            const btnFinish = document.getElementById('btn-finish');
-            if(btnFinish) {
-                const originalText = btnFinish.innerHTML;
-                btnFinish.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-            }
-            
-            // --- Scoring Logic ---
+            // --- Scoring Logic (Hanya membaca dari sesi UTAMA) ---
             let correct = 0;
-            const total = state.questions.length;
+            const totalUtama = state.main.questions.length;
             
-            state.questions.forEach((q, idx) => {
-                const uAns = state.answers[idx];
-                const trueKey = q.Kunci.trim();
+            state.main.questions.forEach((q, idx) => {
+                const uAns = state.main.answers[idx];
+                const trueKey = q.Kunci ? q.Kunci.toString().trim() : '';
                 let isCorrect = false;
 
-                if (!uAns) return; // Wrong if null
+                if (!uAns || trueKey === '' || trueKey === '-') return; 
 
                 if (q.Jenis === 'PG') {
                     isCorrect = (uAns === trueKey);
                 } 
                 else if (q.Jenis === 'PGK') {
-                    // uAns is Array: ['1', '3']. trueKey is "1,3"
                     const trueArr = trueKey.split(',').map(s=>s.trim()).sort();
                     const uArr = uAns.slice().sort();
                     if(trueArr.length === uArr.length && trueArr.every((v,i) => v === uArr[i])) {
@@ -1162,16 +1166,12 @@
                     }
                 }
                 else if (['BS','ST','SS','TP'].includes(q.Jenis)) {
-                    // uAns is Obj: {1:'B', 2:'S', 3:'B'}. trueKey is "B,S,B"
                     const trueArr = trueKey.split(',').map(s=>s.trim());
-                    // Verify all options match
                     let allMatch = true;
                     trueArr.forEach((k, i) => {
-                        const optIndex = i + 1; // 1-based index
-                        if(uAns[optIndex] !== k) allMatch = false;
+                        if(uAns[i+1] !== k) allMatch = false;
                     });
                     
-                    // Also ensure they didn't answer fewer options than required (Fixed keys)
                     let optCount = 0;
                     if(q['Opsi 1'] || q.Opsi1) optCount++; 
                     if(q['Opsi 2'] || q.Opsi2) optCount++;
@@ -1187,19 +1187,24 @@
             });
 
             state.correctCount = correct;
-            state.score = Math.round((correct / total) * 100);
+            state.score = Math.round((correct / totalUtama) * 100) || 0;
 
-            // Bersihkan Sesi Lokal karena ujian sudah selesai secara resmi
             clearLocalState();
 
             // Update Result UI
             document.getElementById('result-student-info').innerText = `${state.student.name} | ${state.examType}`;
             document.getElementById('res-score').innerText = state.score;
             document.getElementById('res-correct').innerText = correct;
-            document.getElementById('res-wrong').innerText = total - correct;
+            document.getElementById('res-wrong').innerText = totalUtama - correct;
 
-            // --- SIMPAN KE GOOGLE SHEETS ---
+            // --- BACKGROUND SAVE KE GOOGLE SHEETS ---
             if (GOOGLE_APP_SCRIPT_URL && GOOGLE_APP_SCRIPT_URL.trim() !== '') {
+                // Menggabungkan jawaban untuk direkam
+                const rekamanJawaban = JSON.stringify({
+                    utama: state.main.answers,
+                    survei: state.survey.answers
+                });
+
                 const payload = {
                     action: 'simpan_nilai',
                     waktu: new Date().toLocaleString('id-ID'),
@@ -1207,114 +1212,149 @@
                     tipe: state.examType,
                     skor: state.score,
                     benar: correct,
-                    salah: total - correct,
-                    jawaban: JSON.stringify(state.answers)
+                    salah: totalUtama - correct,
+                    jawaban: rekamanJawaban
                 };
 
-                try {
-                    // Mengirim data ke Google Script
-                    await fetch(GOOGLE_APP_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors', // Penting untuk menghindari error block CORS di browser
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    console.log("Data berhasil dikirim ke Google Sheets");
-                } catch (error) {
-                    console.error("Gagal menyimpan data:", error);
-                }
+                fetch(GOOGLE_APP_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(() => {
+                    document.getElementById('save-status-indicator').innerHTML = '<i class="fas fa-check text-green-500 mr-1"></i> Hasil ujian berhasil tersimpan ke sistem.';
+                }).catch(err => {
+                    document.getElementById('save-status-indicator').innerHTML = '<i class="fas fa-times text-red-500 mr-1"></i> Gagal menyimpan otomatis, harap hubungi pengawas.';
+                    console.error(err);
+                });
             }
-
-            switchScreen('result');
         }
 
-        function showReviewScreen() {
-            switchScreen('review');
-            const container = document.getElementById('review-container');
-            container.innerHTML = '';
+        function renderReviewItems(container, questions, answers, title) {
+            if(!questions || questions.length === 0) return;
 
-            state.questions.forEach((q, idx) => {
-                const uAns = state.answers[idx];
-                const trueKey = q.Kunci;
+            const header = document.createElement('div');
+            header.className = "w-full border-b-2 border-gray-200 mt-6 mb-6 pb-2";
+            header.innerHTML = `<h3 class="text-lg font-bold text-gray-700 uppercase tracking-wider">${title}</h3>`;
+            container.appendChild(header);
+
+            questions.forEach((q, idx) => {
+                const uAns = answers[idx];
+                const trueKey = q.Kunci ? q.Kunci.toString().trim() : '';
                 
-                // Determine correctness for UI color
                 let isCorrect = false;
                 let userAnsText = "- Kosong -";
+                let isSurvey = title.includes("Survei") || trueKey === '' || trueKey === '-'; // Identifikasi jika ini soal survei tanpa kunci
                 
                 if (q.Jenis === 'PG') {
-                    isCorrect = (uAns === trueKey);
+                    if(!isSurvey) isCorrect = (uAns === trueKey);
                     userAnsText = uAns ? `Opsi ${uAns}` : '-';
                 } 
                 else if (q.Jenis === 'PGK') {
                     const trueArr = trueKey.split(',').map(s=>s.trim()).sort();
                     const uArr = uAns ? uAns.slice().sort() : [];
-                    isCorrect = (trueArr.length === uArr.length && trueArr.every((v,i) => v === uArr[i]));
+                    if(!isSurvey) isCorrect = (trueArr.length === uArr.length && trueArr.every((v,i) => v === uArr[i]));
                     userAnsText = uArr.length > 0 ? `Opsi [${uArr.join(', ')}]` : '-';
                 }
                 else if (['BS','ST','SS','TP'].includes(q.Jenis)) {
                     const trueArr = trueKey.split(',').map(s=>s.trim());
                     let allMatch = true;
                     let uTextArr = [];
-                    trueArr.forEach((k, i) => {
+                    // Handle variable amount of options
+                    let maxOpts = isSurvey ? (uAns ? Object.keys(uAns).length : 0) : trueArr.length;
+                    // Jika survei, tidak peduli trueArr
+                    let loopCount = isSurvey ? (Object.keys(q).filter(k => k.startsWith('Opsi') && q[k]).length) : trueArr.length;
+                    
+                    for(let i=0; i<loopCount; i++) {
                         const optAns = uAns && uAns[i+1] ? uAns[i+1] : '-';
                         uTextArr.push(`${i+1}:${optAns}`);
-                        if(optAns !== k) allMatch = false;
-                    });
-                    isCorrect = allMatch && Object.keys(uAns||{}).length === trueArr.length;
+                        if(!isSurvey && optAns !== trueArr[i]) allMatch = false;
+                    }
+                    if(!isSurvey) isCorrect = allMatch && Object.keys(uAns||{}).length === trueArr.length;
                     userAnsText = uTextArr.join(' | ');
                 }
 
+                // Tampilan khusus jika ini soal survei (Tidak ada Benar/Salah)
+                let statusBadge = `
+                    <span class="px-3 py-1 rounded text-xs font-bold ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
+                        <i class="fas ${isCorrect ? 'fa-check' : 'fa-times'} mr-1"></i> ${isCorrect ? 'BENAR' : 'SALAH'}
+                    </span>`;
+                let borderClass = isCorrect ? 'border-green-300' : 'border-red-300';
+                let bgHeaderClass = isCorrect ? 'bg-green-50' : 'bg-red-50';
+                let textColorClass = isCorrect ? 'text-green-800' : 'text-red-800';
+                
+                if (isSurvey) {
+                    statusBadge = `<span class="px-3 py-1 rounded text-xs font-bold bg-gray-200 text-gray-600">Survei</span>`;
+                    borderClass = 'border-gray-300';
+                    bgHeaderClass = 'bg-gray-100';
+                    textColorClass = 'text-gray-700';
+                }
+
                 const card = document.createElement('div');
-                card.className = `mb-8 bg-white border rounded-xl overflow-hidden shadow-sm ${isCorrect ? 'border-green-300' : 'border-red-300'}`;
+                card.className = `mb-6 bg-white border rounded-xl overflow-hidden shadow-sm ${borderClass}`;
                 
                 card.innerHTML = `
-                    <div class="px-5 py-3 border-b flex justify-between items-center ${isCorrect ? 'bg-green-50' : 'bg-red-50'}">
-                        <span class="font-bold ${isCorrect ? 'text-green-800' : 'text-red-800'}">Soal ${idx + 1} (${getQuestionTypeLabel(q.Jenis)})</span>
-                        <span class="px-3 py-1 rounded text-xs font-bold ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}">
-                            <i class="fas ${isCorrect ? 'fa-check' : 'fa-times'} mr-1"></i> ${isCorrect ? 'BENAR' : 'SALAH'}
-                        </span>
+                    <div class="px-5 py-3 border-b flex justify-between items-center ${bgHeaderClass}">
+                        <span class="font-bold ${textColorClass}">Soal ${idx + 1} (${getQuestionTypeLabel(q.Jenis)})</span>
+                        ${statusBadge}
                     </div>
                     <div class="p-5">
                         ${q.Pemantik ? `<div class="text-sm bg-gray-50 p-3 rounded border text-gray-600 mb-4 h-24 overflow-y-auto custom-scroll">${q.Pemantik.replace(/\n/g, '<br>')}</div>` : ''}
                         ${q.Gambar ? `<img src="${q.Gambar}" class="max-h-40 rounded mb-4">` : ''}
                         
-                        <p class="font-medium text-gray-800 mb-4">${q.Pertanyaan}</p>
+                        <p class="font-medium text-gray-800 mb-4">${q.Pertanyaan.replace(/\n/g, '<br>')}</p>
                         
-                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm bg-gray-50 p-4 rounded-lg border">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm bg-gray-50 p-4 rounded-lg border">
                             <div>
                                 <p class="text-gray-500 mb-1">Jawaban Kamu:</p>
-                                <p class="font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}">${userAnsText}</p>
+                                <p class="font-bold ${!isSurvey ? (isCorrect ? 'text-green-600' : 'text-red-600') : 'text-gray-700'}">${userAnsText}</p>
                             </div>
+                            ${!isSurvey ? `
                             <div>
                                 <p class="text-gray-500 mb-1">Kunci Jawaban:</p>
                                 <p class="font-bold text-blue-600">${q.Jenis === 'PG' ? `Opsi ${trueKey}` : (q.Jenis === 'PGK' ? `Opsi [${trueKey}]` : trueKey)}</p>
-                            </div>
+                            </div>` : ''}
                         </div>
                         
+                        ${!isSurvey ? `
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <h4 class="font-bold text-blue-800 text-sm mb-1"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Pembahasan:</h4>
                             <p class="text-sm text-gray-700 whitespace-pre-line">${q.Pembahasan ? q.Pembahasan : 'Tidak ada pembahasan.'}</p>
-                        </div>
+                        </div>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
+        function switchScreen(screenId) {
+            const screens = ['screen-login', 'screen-loading', 'screen-exam', 'screen-result', 'screen-review'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(`screen-${screenId}`);
+            if(target) {
+                target.classList.remove('hidden');
+                
+                // Jika membuka review, render data
+                if (screenId === 'review') {
+                    const container = document.getElementById('review-container');
+                    container.innerHTML = '';
+                    renderReviewItems(container, state.main.questions, state.main.answers, "Sesi Utama");
+                    renderReviewItems(container, state.survey.questions, state.survey.answers, "Sesi Survei");
+                }
+            }
+        }
+
         function resetApp() {
-            // Bersihkan sesi untuk berjaga-jaga
             clearLocalState();
             
-            // Reset header
-            document.getElementById('header-timer').classList.replace('bg-red-600', 'bg-blue-800');
-            document.getElementById('header-timer').classList.replace('border-red-700', 'border-blue-600');
-            document.getElementById('header-timer').classList.remove('animate-pulse');
+            document.getElementById('header-timer').className = "hidden";
             document.getElementById('header-student-name').innerText = "Peserta Ujian";
             document.getElementById('login-name').value = "";
             document.getElementById('login-token').value = "";
-            generateNewToken(); // Buat token baru untuk siswa berikutnya
+            generateNewToken(); 
             switchScreen('login');
         }
 
